@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>15383A時間記錄打卡系統</title>
+    <title>時間記錄打卡系統</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -14,7 +14,6 @@
             --active-color: #ff4d4d;
         }
 
-        /* 淺色主題變量 */
         .light-theme {
             --bg-color: #f5f5f7;
             --card-bg: #ffffff;
@@ -27,7 +26,6 @@
             --record-bg: #ffffff;
         }
 
-        /* 深色主題變量 */
         .dark-theme {
             --bg-color: #121212;
             --card-bg: #1E1E1E;
@@ -172,13 +170,12 @@
     
     <div class="container mx-auto max-w-md p-4 pt-12">
         <div class="card p-5 mb-4">
-            <h1 class="text-xl font-bold text-center mb-3">15383A時間記錄打卡系統</h1>
+            <h1 class="text-xl font-bold text-center mb-3">時間記錄打卡系統</h1>
             
             <div class="time-display mb-4" id="currentTimeDisplay">
                 00:00:00
             </div>
             
-            <!-- 動態按鈕容器 -->
             <div class="grid grid-cols-2 gap-3 mb-4" id="activityButtonsContainer">
                 <!-- 按鈕將通過JavaScript動態生成 -->
             </div>
@@ -202,11 +199,11 @@
     </div>
 
     <script>
-        // 系統配置 (擴展入口)
+        // 系統配置
         const activities = [
             '編程', '建造', '練習', 'AWP', 'notebook',
-            // 擴展點：在此添加新活動類型 ↓
-            // '會議', '設計' 
+            // 擴展點：在此添加新活動類型
+            // '會議', '設計'
         ];
 
         // 全局變量
@@ -215,7 +212,7 @@
         let startTime = null;
         let currentTheme = 'light';
 
-        // DOM 元素
+        // DOM元素
         const timeDisplay = document.getElementById('currentTimeDisplay');
         const clearBtn = document.getElementById('clearBtn');
         const exportBtn = document.getElementById('exportBtn');
@@ -226,25 +223,19 @@
 
         // 初始化
         function init() {
-            // 生成活動按鈕
             renderActivityButtons();
-            
-            // 載入記錄與主題
             loadRecords();
             loadThemePreference();
             
-            // 初始化時間顯示
             updateTimeDisplay();
             setInterval(updateTimeDisplay, 1000);
 
-            // 事件監聽
             activityButtonsContainer.addEventListener('click', handleActivityButtonClick);
             clearBtn.addEventListener('click', clearRecords);
             exportBtn.addEventListener('click', exportToExcel);
             themeToggle.addEventListener('click', toggleTheme);
         }
 
-        // 生成活動按鈕
         function renderActivityButtons() {
             activityButtonsContainer.innerHTML = '';
             activities.forEach(activity => {
@@ -256,7 +247,7 @@
             });
         }
 
-        // 主題相關功能保持不變
+        // 主題功能
         function loadThemePreference() {
             const savedTheme = localStorage.getItem('timeTrackerTheme');
             if (savedTheme) {
@@ -272,50 +263,41 @@
         }
 
         function updateTheme() {
-            if (currentTheme === 'dark') {
-                body.classList.remove('light-theme');
-                body.classList.add('dark-theme');
-                themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
-            } else {
-                body.classList.remove('dark-theme');
-                body.classList.add('light-theme');
-                themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
-            }
+            body.classList.toggle('dark-theme', currentTheme === 'dark');
+            body.classList.toggle('light-theme', currentTheme === 'light');
+            themeToggle.innerHTML = currentTheme === 'dark' 
+                ? '<i class="fas fa-sun"></i>' 
+                : '<i class="fas fa-moon"></i>';
         }
 
-        // 時間顯示功能保持不變
+        // 時間顯示
         function updateTimeDisplay() {
             const now = new Date();
-            const timeString = now.toLocaleTimeString('zh-Hant', {
+            timeDisplay.textContent = now.toLocaleString('zh-Hant', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
                 hour: '2-digit',
                 minute: '2-digit',
                 second: '2-digit',
                 hour12: false
-            });
-            const dateString = now.toLocaleDateString('zh-Hant', {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit'
-            });
-            timeDisplay.textContent = `${dateString} ${timeString}`;
+            }).replace(/\//g, '-');
         }
 
-        // 活動按鈕處理邏輯
+        // 記錄處理
         function handleActivityButtonClick(event) {
             const button = event.target.closest('.activity-btn');
             if (!button) return;
 
-            const activityType = button.dataset.type;
             const now = new Date();
 
             if (activeButton === button) {
-                endActivity(activityType, now);
+                endActivity(button.dataset.type, now);
                 button.classList.remove('active');
                 activeButton = null;
                 startTime = null;
             } else if (activeButton) {
-                const prevActivityType = activeButton.dataset.type;
-                endActivity(prevActivityType, now);
+                endActivity(activeButton.dataset.type, now);
                 activeButton.classList.remove('active');
                 button.classList.add('active');
                 activeButton = button;
@@ -327,24 +309,16 @@
             }
         }
 
-        // 記錄處理相關功能保持不變
         function endActivity(activityType, endTime) {
             const durationMs = endTime - startTime;
-            const durationMinutes = Math.floor(durationMs / 60000);
-            const hours = Math.floor(durationMinutes / 60);
-            const minutes = durationMinutes % 60;
-            const durationFormatted = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
-
-            const startFormatted = formatDateTime(startTime);
-            const endFormatted = formatDateTime(endTime);
-
+            const duration = new Date(durationMs).toISOString().substr(11, 5);
             const record = {
                 type: activityType,
                 startTime: startTime.getTime(),
                 endTime: endTime.getTime(),
-                startFormatted: startFormatted,
-                endFormatted: endFormatted,
-                duration: durationFormatted
+                startFormatted: formatDateTime(startTime),
+                endFormatted: formatDateTime(endTime),
+                duration: duration
             };
 
             records.unshift(record);
@@ -364,46 +338,35 @@
         }
 
         function renderRecords() {
-            if (records.length === 0) {
-                recordsList.innerHTML = '<div class="text-center text-gray-500 py-4">尚無記錄</div>';
-                return;
-            }
-
-            recordsList.innerHTML = '';
+            recordsList.innerHTML = records.length ? '' : '<div class="text-center text-gray-500 py-4">尚無記錄</div>';
+            
             records.forEach((record, index) => {
+                const [startDate, startTime] = record.startFormatted.split(' ');
+                const [endDate, endTime] = record.endFormatted.split(' ');
+
                 const recordItem = document.createElement('div');
                 recordItem.className = 'record-item';
-                
-                const startDateTime = record.startFormatted.split(' ');
-                const endDateTime = record.endFormatted.split(' ');
-                const startDate = startDateTime[0];
-                const startTime = startDateTime[1];
-                const endTime = endDateTime[1];
-
                 recordItem.innerHTML = `
                     <div class="flex justify-between items-center">
                         <div>
                             <div class="font-bold text-lg">${record.type}</div>
-                            <div class="text-sm text-opacity-80" style="color: var(--secondary-text)">${startDate}</div>
-                            <div class="text-sm text-opacity-80" style="color: var(--secondary-text)">${startTime} - ${endTime}</div>
-                            <div class="text-sm mt-1 text-opacity-80" style="color: var(--secondary-text)">持續: ${record.duration}</div>
+                            <div class="text-sm text-opacity-80" style="color: var(--secondary-text)">
+                                ${startDate} ${startTime} - ${endTime}
+                            </div>
+                            <div class="text-sm mt-1 text-opacity-80" style="color: var(--secondary-text)">
+                                持續: ${record.duration}
+                            </div>
                         </div>
-                        <button class="delete-btn text-red-500 hover:text-red-600 p-2" data-index="${index}">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                        <button class="delete-btn" data-index="${index}">
+                            <svg class="h-5 w-5 text-red-500 hover:text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/>
                             </svg>
                         </button>
                     </div>
                 `;
                 
+                recordItem.querySelector('.delete-btn').addEventListener('click', () => deleteRecord(index));
                 recordsList.appendChild(recordItem);
-            });
-
-            document.querySelectorAll('.delete-btn').forEach(button => {
-                button.addEventListener('click', function() {
-                    const index = parseInt(this.dataset.index);
-                    deleteRecord(index);
-                });
             });
         }
 
@@ -433,49 +396,82 @@
             }
         }
 
-        // 導出功能保持不變
+        // Excel導出功能
         function exportToExcel() {
-            if (records.length === 0) {
+            if (!records.length) {
                 alert('沒有記錄可導出');
                 return;
             }
 
-            const excelData = prepareExcelData();
-            showExcelExportModal(excelData);
+            const data = prepareExcelData();
+            showExportModal(data);
         }
 
         function prepareExcelData() {
-            const groupedRecords = {};
-            records.forEach(record => {
-                const date = new Date(record.startTime).toLocaleDateString('zh-Hant');
-                if (!groupedRecords[date]) groupedRecords[date] = [];
-                
-                groupedRecords[date].push({
-                    日期: date,
-                    活動類型: record.type,
-                    開始時間: new Date(record.startTime).toLocaleTimeString('zh-Hant', {hour: '2-digit', minute: '2-digit', hour12: false}),
-                    結束時間: new Date(record.endTime).toLocaleTimeString('zh-Hant', {hour: '2-digit', minute: '2-digit', hour12: false}),
-                    持續時間: record.duration
-                });
-            });
-
-            const worksheetData = [];
-            Object.values(groupedRecords).forEach(dateRecords => {
-                worksheetData.push(...dateRecords);
-            });
-
-            return worksheetData;
+            return records.map(record => ({
+                日期: new Date(record.startTime).toLocaleDateString('zh-Hant'),
+                活動類型: record.type,
+                開始時間: new Date(record.startTime).toLocaleTimeString('zh-Hant', {hour: '2-digit', minute: '2-digit', hour12: false}),
+                結束時間: new Date(record.endTime).toLocaleTimeString('zh-Hant', {hour: '2-digit', minute: '2-digit', hour12: false}),
+                持續時間: record.duration
+            }));
         }
 
-        function showExcelExportModal(excelData) {
-            const modalOverlay = document.createElement('div');
-            modalOverlay.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50';
-
+        function showExportModal(data) {
             const modal = document.createElement('div');
-            modal.className = 'export-modal rounded-lg w-full max-w-lg max-h-[90vh] overflow-hidden';
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50';
 
-            // 模態框內容保持不變...
-            // 此處保持原有模態框實現，因篇幅限制略過，實際使用時需保留
+            const modalContent = document.createElement('div');
+            modalContent.className = 'export-modal rounded-lg w-full max-w-lg bg-white dark:bg-gray-800';
+            
+            modalContent.innerHTML = `
+                <div class="export-header px-4 py-3 flex justify-between items-center rounded-t-lg">
+                    <h3 class="font-bold text-white">導出Excel</h3>
+                    <button class="text-white hover:text-gray-200 close-btn">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="p-4">
+                    <div class="preview-container mb-4">
+                        <table class="preview-table">
+                            <thead>
+                                <tr>${Object.keys(data[0]).map(k => `<th>${k}</th>`).join('')}</tr>
+                            </thead>
+                            <tbody>
+                                ${data.slice(0, 5).map(row => `
+                                    <tr>${Object.values(row).map(v => `<td>${v}</td>`).join('')}</tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="flex justify-end space-x-3">
+                        <button class="cancel-btn px-4 py-2 rounded bg-gray-200 hover:bg-gray-300">取消</button>
+                        <button class="export-confirm-btn px-4 py-2 rounded bg-blue-500 text-white hover:bg-blue-600">
+                            <i class="fas fa-download mr-2"></i>導出Excel
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            modalContent.querySelector('.close-btn').onclick = 
+            modalContent.querySelector('.cancel-btn').onclick = () => modal.remove();
+
+            modalContent.querySelector('.export-confirm-btn').onclick = () => {
+                try {
+                    const ws = XLSX.utils.json_to_sheet(data);
+                    const wb = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(wb, ws, "時間記錄");
+                    XLSX.writeFile(wb, `時間記錄_${new Date().toISOString().slice(0,10)}.xlsx`);
+                    modal.remove();
+                } catch (error) {
+                    alert('導出失敗: ' + error.message);
+                }
+            };
+
+            modal.appendChild(modalContent);
+            document.body.appendChild(modal);
         }
 
         // 啟動系統
