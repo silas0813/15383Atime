@@ -1,0 +1,21 @@
+{
+    "short_name": "vex打卡系統",
+    "name": "15383A 時間記錄打卡系統",
+    "icons": [
+      {
+        "src": "/time-left.png",
+        "sizes": "128x128",
+        "type": "image/png"
+      },
+      {
+        "src": "/66163.png",
+        "sizes": "512x512",
+        "type": "image/png"
+      }
+    ],
+    "start_url": ".",
+    "display": "standalone",
+    "theme_color": "#000000",
+    "background_color": "#ffffff"
+  }
+  
