@@ -489,72 +489,739 @@
     </div>
 
     <script>
-        // 系統配置
-        const activities = [
-            '編程', '建造', '練習', 'AWP', 'notebook',
-            // 擴展點：在此添加新活動類型
-        ];
+        // 確保DOM完全加載後再執行腳本
+        document.addEventListener('DOMContentLoaded', function() {
+            // 系統配置
+            const activities = [
+                '編程', '建造', '練習', 'AWP', 'notebook',
+                // 擴展點：在此添加新活動類型
+            ];
 
-        // 全局變量
-        let records = [];
-        let matchRecords = [];
-        let skillRecords = [];
-        let activeButton = null;
-        let startTime = null;
-        let currentTheme = 'light';
-        let currentTab = 'timeTracking';
-        let selectedMode = 'manual';
+            // 全局變量
+            let records = [];
+            let matchRecords = [];
+            let skillRecords = [];
+            let activeButton = null;
+            let startTime = null;
+            let currentTheme = 'light';
+            let currentTab = 'timeTracking';
+            let selectedMode = 'manual';
 
-        // DOM元素
-        const timeDisplay = document.getElementById('currentTimeDisplay');
-        const clearBtn = document.getElementById('clearBtn');
-        const exportBtn = document.getElementById('exportBtn');
-        const recordsList = document.getElementById('recordsList');
-        const themeToggle = document.getElementById('themeToggle');
-        const body = document.body;
-        const activityButtonsContainer = document.getElementById('activityButtonsContainer');
-        const tabs = document.querySelectorAll('.tab');
-        const tabContents = document.querySelectorAll('.tab-content');
-        
-        // 比賽記錄DOM元素
-        const matchDate = document.getElementById('matchDate');
-        const myTeamNumber = document.getElementById('myTeamNumber');
-        const teammateNumber = document.getElementById('teammateNumber');
-        const myTeamScore = document.getElementById('myTeamScore');
-        const opponentTeam1 = document.getElementById('opponentTeam1');
-        const opponentTeam2 = document.getElementById('opponentTeam2');
-        const opponentScore = document.getElementById('opponentScore');
-        const matchCount = document.getElementById('matchCount');
-        const autoWin = document.getElementById('autoWin');
-        const saveMatchBtn = document.getElementById('saveMatchBtn');
-        const clearMatchBtn = document.getElementById('clearMatchBtn');
-        const exportMatchBtn = document.getElementById('exportMatchBtn');
-        const matchRecordsList = document.getElementById('matchRecordsList');
-        
-        // 技能賽DOM元素
-        const skillDate = document.getElementById('skillDate');
-        const radioButtons = document.querySelectorAll('.radio-btn');
-        const skillScore = document.getElementById('skillScore');
-        const saveSkillBtn = document.getElementById('saveSkillBtn');
-        const clearSkillBtn = document.getElementById('clearSkillBtn');
-        const exportSkillBtn = document.getElementById('exportSkillBtn');
-        const skillRecordsList = document.getElementById('skillRecordsList');
-
-        // 初始化
-        function init() {
-            renderActivityButtons();
-            loadRecords();
-            loadMatchRecords();
-            loadSkillRecords();
-            loadThemePreference();
+            // DOM元素 - 時間記錄相關
+            const timeDisplay = document.getElementById('currentTimeDisplay');
+            const clearBtn = document.getElementById('clearBtn');
+            const exportBtn = document.getElementById('exportBtn');
+            const recordsList = document.getElementById('recordsList');
+            const themeToggle = document.getElementById('themeToggle');
+            const body = document.body;
+            const activityButtonsContainer = document.getElementById('activityButtonsContainer');
+            const tabs = document.querySelectorAll('.tab');
+            const tabContents = document.querySelectorAll('.tab-content');
             
-            // 設置今天日期
-            const today = new Date().toISOString().split('T')[0];
-            matchDate.value = today;
-            skillDate.value = today;
+            // DOM元素 - 比賽記錄相關
+            const matchDate = document.getElementById('matchDate');
+            const myTeamNumber = document.getElementById('myTeamNumber');
+            const teammateNumber = document.getElementById('teammateNumber');
+            const myTeamScore = document.getElementById('myTeamScore');
+            const opponentTeam1 = document.getElementById('opponentTeam1');
+            const opponentTeam2 = document.getElementById('opponentTeam2');
+            const opponentScore = document.getElementById('opponentScore');
+            const matchCount = document.getElementById('matchCount');
+            const autoWin = document.getElementById('autoWin');
+            const saveMatchBtn = document.getElementById('saveMatchBtn');
+            const clearMatchBtn = document.getElementById('clearMatchBtn');
+            const exportMatchBtn = document.getElementById('exportMatchBtn');
+            const matchRecordsList = document.getElementById('matchRecordsList');
             
-            updateTimeDisplay();
-            setInterval(updateTimeDisplay, 1000);
+            // DOM元素 - 技能賽相關
+            const skillDate = document.getElementById('skillDate');
+            const radioButtons = document.querySelectorAll('.radio-btn');
+            const skillScore = document.getElementById('skillScore');
+            const saveSkillBtn = document.getElementById('saveSkillBtn');
+            const clearSkillBtn = document.getElementById('clearSkillBtn');
+            const exportSkillBtn = document.getElementById('exportSkillBtn');
+            const skillRecordsList = document.getElementById('skillRecordsList');
 
-            // 事件監聽器
-            activityButtonsContainer.addEventListener('click', handleAct
+            // 初始化
+            function init() {
+                console.log("初始化應用...");
+                
+                // 渲染活動按鈕
+                renderActivityButtons();
+                
+                // 加載存儲的記錄
+                loadRecords();
+                loadMatchRecords();
+                loadSkillRecords();
+                
+                // 加載主題偏好
+                loadThemePreference();
+                
+                // 設置今天日期
+                const today = new Date().toISOString().split('T')[0];
+                if(matchDate) matchDate.value = today;
+                if(skillDate) skillDate.value = today;
+                
+                // 更新時間顯示
+                updateTimeDisplay();
+                setInterval(updateTimeDisplay, 1000);
+
+                // 綁定事件監聽器 - 通用
+                if(themeToggle) themeToggle.addEventListener('click', toggleTheme);
+                
+                // 選項卡切換事件
+                tabs.forEach(tab => {
+                    tab.addEventListener('click', function() {
+                        const tabId = this.getAttribute('data-tab');
+                        switchTab(tabId);
+                    });
+                });
+                
+                // 綁定事件監聽器 - 時間記錄
+                if(activityButtonsContainer) activityButtonsContainer.addEventListener('click', handleActivityButtonClick);
+                if(clearBtn) clearBtn.addEventListener('click', clearRecords);
+                if(exportBtn) exportBtn.addEventListener('click', exportToExcel);
+                
+                // 綁定事件監聽器 - 比賽記錄
+                if(saveMatchBtn) saveMatchBtn.addEventListener('click', saveMatchRecord);
+                if(clearMatchBtn) clearMatchBtn.addEventListener('click', clearMatchRecords);
+                if(exportMatchBtn) exportMatchBtn.addEventListener('click', exportMatchRecords);
+                
+                // 綁定事件監聽器 - 技能賽記錄
+                // 模式選擇按鈕
+                radioButtons.forEach(button => {
+                    button.addEventListener('click', function() {
+                        radioButtons.forEach(btn => btn.classList.remove('active'));
+                        this.classList.add('active');
+                        selectedMode = this.getAttribute('data-mode');
+                    });
+                });
+                
+                if(saveSkillBtn) saveSkillBtn.addEventListener('click', saveSkillRecord);
+                if(clearSkillBtn) clearSkillBtn.addEventListener('click', clearSkillRecords);
+                if(exportSkillBtn) exportSkillBtn.addEventListener('click', exportSkillRecords);
+                
+                console.log("初始化完成！");
+            }
+
+            function renderActivityButtons() {
+                if(!activityButtonsContainer) return;
+                
+                activityButtonsContainer.innerHTML = '';
+                activities.forEach(activity => {
+                    const button = document.createElement('button');
+                    button.className = 'activity-btn p-4';
+                    button.dataset.type = activity;
+                    button.textContent = activity;
+                    activityButtonsContainer.appendChild(button);
+                });
+            }
+            
+            // 選項卡切換
+            function switchTab(tabId) {
+                tabs.forEach(tab => {
+                    tab.classList.toggle('active', tab.getAttribute('data-tab') === tabId);
+                });
+                
+                tabContents.forEach(content => {
+                    content.classList.toggle('active', content.id === tabId);
+                });
+                
+                currentTab = tabId;
+            }
+
+            // 主題功能
+            function loadThemePreference() {
+                const savedTheme = localStorage.getItem('timeTrackerTheme');
+                if (savedTheme) {
+                    currentTheme = savedTheme;
+                    updateTheme();
+                }
+            }
+
+            function toggleTheme() {
+                currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+                updateTheme();
+                localStorage.setItem('timeTrackerTheme', currentTheme);
+            }
+
+            function updateTheme() {
+                body.classList.toggle('dark-theme', currentTheme === 'dark');
+                body.classList.toggle('light-theme', currentTheme === 'light');
+                if(themeToggle) {
+                    themeToggle.innerHTML = currentTheme === 'dark' 
+                        ? '<i class="fas fa-sun"></i>' 
+                        : '<i class="fas fa-moon"></i>';
+                }
+            }
+
+            // 時間顯示
+            function updateTimeDisplay() {
+                if(!timeDisplay) return;
+                
+                const now = new Date();
+                timeDisplay.textContent = now.toLocaleString('zh-Hant', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false
+                }).replace(/\//g, '-');
+            }
+
+            // 時間記錄處理
+            function handleActivityButtonClick(event) {
+                const button = event.target.closest('.activity-btn');
+                if (!button) return;
+
+                const now = new Date();
+
+                if (activeButton === button) {
+                    endActivity(button.dataset.type, now);
+                    button.classList.remove('active');
+                    activeButton = null;
+                    startTime = null;
+                } else if (activeButton) {
+                    endActivity(activeButton.dataset.type, now);
+                    activeButton.classList.remove('active');
+                    button.classList.add('active');
+                    activeButton = button;
+                    startTime = now;
+                } else {
+                    button.classList.add('active');
+                    activeButton = button;
+                    startTime = now;
+                }
+            }
+
+            function endActivity(activityType, endTime) {
+                const durationMs = endTime - startTime;
+                const duration = new Date(durationMs).toISOString().substr(11, 5);
+                const record = {
+                    type: activityType,
+                    startTime: startTime.getTime(),
+                    endTime: endTime.getTime(),
+                    startFormatted: formatDateTime(startTime),
+                    endFormatted: formatDateTime(endTime),
+                    duration: duration
+                };
+
+                records.unshift(record);
+                saveRecords();
+                renderRecords();
+            }
+
+            function formatDateTime(date) {
+                return date.toLocaleString('zh-Hant', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false
+                }).replace(/\//g, '-');
+            }
+
+            function renderRecords() {
+                if(!recordsList) return;
+                
+                recordsList.innerHTML = records.length ? '' : '<div class="text-center text-gray-500 py-4">尚無記錄</div>';
+                
+                records.forEach((record, index) => {
+                    const [startDate, startTime] = record.startFormatted.split(' ');
+                    const [endDate, endTime] = record.endFormatted.split(' ');
+
+                    const recordItem = document.createElement('div');
+                    recordItem.className = 'record-item';
+                    recordItem.innerHTML = `
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <div class="font-bold text-lg">${record.type}</div>
+                                <div class="text-sm text-opacity-80" style="color: var(--secondary-text)">
+                                    ${startDate} ${startTime} - ${endTime}
+                                </div>
+                                <div class="text-sm mt-1 text-opacity-80" style="color: var(--secondary-text)">
+                                    持續: ${record.duration}
+                                </div>
+                            </div>
+                            <button class="delete-btn" data-index="${index}">
+                                <svg class="h-5 w-5 text-red-500 hover:text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                                </svg>
+                            </button>
+                        </div>
+                    `;
+                    
+                    recordItem.querySelector('.delete-btn').addEventListener('click', () => deleteRecord(index));
+                    recordsList.appendChild(recordItem);
+                });
+            }
+
+            function deleteRecord(index) {
+                records.splice(index, 1);
+                saveRecords();
+                renderRecords();
+            }
+
+            function clearRecords() {
+                if (confirm('確定要清除所有時間記錄嗎？此操作無法撤銷。')) {
+                    records = [];
+                    saveRecords();
+                    renderRecords();
+                }
+            }
+
+            function saveRecords() {
+                localStorage.setItem('timeRecords', JSON.stringify(records));
+            }
+
+            function loadRecords() {
+                const saved = localStorage.getItem('timeRecords');
+                if (saved) {
+                    records = JSON.parse(saved);
+                    renderRecords();
+                }
+            }
+
+            // 比賽記錄功能
+            function saveMatchRecord() {
+                console.log("嘗試保存比賽記錄...");
+                
+                const date = matchDate.value;
+                const teamNumber = myTeamNumber.value.trim();
+                const teammate = teammateNumber.value.trim();
+                const myScore = myTeamScore.value;
+                const opponent1 = opponentTeam1.value.trim();
+                const opponent2 = opponentTeam2.value.trim();
+                const oppScore = opponentScore.value;
+                const count = matchCount.value.trim();
+                const win = autoWin.checked;
+                
+                if (!date || !teamNumber || !myScore || !opponent1 || !oppScore || !count) {
+                    alert('請填寫必要的比賽信息（日期、己方隊伍、己方分數、對方隊伍1、對方分數、場數/回合）');
+                    return;
+                }
+                
+                const matchRecord = {
+                    id: Date.now(),
+                    date: date,
+                    myTeam: teamNumber,
+                    teammate: teammate || "未指定",
+                    myScore: parseInt(myScore),
+                    opponent1: opponent1,
+                    opponent2: opponent2 || "未指定",
+                    opponentScore: parseInt(oppScore),
+                    count: count,
+                    autoWin: win,
+                    timestamp: new Date().toISOString()
+                };
+                
+                console.log("新比賽記錄:", matchRecord);
+                
+                matchRecords.unshift(matchRecord);
+                saveMatchRecords();
+                renderMatchRecords();
+                
+                // 重置部分表單字段
+                myTeamScore.value = '';
+                opponentScore.value = '';
+                matchCount.value = '';
+                autoWin.checked = false;
+                
+                alert('比賽記錄已保存！');
+            }
+            
+            function renderMatchRecords() {
+                if(!matchRecordsList) return;
+                
+                matchRecordsList.innerHTML = matchRecords.length ? '' : '<div class="text-center text-gray-500 py-4">尚無比賽記錄</div>';
+                
+                matchRecords.forEach((record, index) => {
+                    const recordItem = document.createElement('div');
+                    recordItem.className = 'record-item';
+                    recordItem.innerHTML = `
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <div class="font-bold text-lg">${record.date}</div>
+                                <div class="text-sm text-opacity-80" style="color: var(--secondary-text)">
+                                    己方：${record.myTeam} | 對方：${record.opponent1}${record.opponent2 !== "未指定" ? '、' + record.opponent2 : ''}
+                                </div>
+                                <div class="text-sm text-opacity-80" style="color: var(--secondary-text)">
+                                    場數/回合: ${record.count} | 比分: ${record.myScore} : ${record.opponentScore}
+                                </div>
+                                <div class="text-sm mt-1 text-opacity-80" style="color: var(--secondary-text)">
+                                    隊友: ${record.teammate} | 自動模式: ${record.autoWin ? '獲勝' : '未獲勝'}
+                                </div>
+                            </div>
+                            <button class="delete-match-btn" data-index="${index}">
+                                <svg class="h-5 w-5 text-red-500 hover:text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                                </svg>
+                            </button>
+                        </div>
+                    `;
+                    
+                    recordItem.querySelector('.delete-match-btn').addEventListener('click', () => deleteMatchRecord(index));
+                    matchRecordsList.appendChild(recordItem);
+                });
+            }
+            
+            function deleteMatchRecord(index) {
+                matchRecords.splice(index, 1);
+                saveMatchRecords();
+                renderMatchRecords();
+            }
+            
+            function clearMatchRecords() {
+                if (confirm('確定要清除所有比賽記錄嗎？此操作無法撤銷。')) {
+                    matchRecords = [];
+                    saveMatchRecords();
+                    renderMatchRecords();
+                }
+            }
+            
+            function saveMatchRecords() {
+                localStorage.setItem('matchRecords', JSON.stringify(matchRecords));
+            }
+            
+            function loadMatchRecords() {
+                const saved = localStorage.getItem('matchRecords');
+                if (saved) {
+                    matchRecords = JSON.parse(saved);
+                    renderMatchRecords();
+                }
+            }
+            
+            function exportMatchRecords() {
+                if (!matchRecords.length) {
+                    alert('沒有比賽記錄可導出');
+                    return;
+                }
+                
+                const data = prepareMatchExcelData();
+                showMatchExportModal(data);
+            }
+            
+            function prepareMatchExcelData() {
+                return matchRecords.map(record => ({
+                    日期: record.date,
+                    己方隊伍: record.myTeam,
+                    隊友: record.teammate,
+                    己方分數: record.myScore,
+                    對方隊伍1: record.opponent1,
+                    對方隊伍2: record.opponent2,
+                    對方分數: record.opponentScore,
+                    場數回合: record.count,
+                    自動模式獲勝: record.autoWin ? '是' : '否'
+                }));
+            }
+            
+            function showMatchExportModal(data) {
+                const modal = document.createElement('div');
+                modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50';
+
+                const modalContent = document.createElement('div');
+                modalContent.className = 'export-modal rounded-lg w-full max-w-lg bg-white dark:bg-gray-800';
+                
+                modalContent.innerHTML = `
+                    <div class="export-header px-4 py-3 flex justify-between items-center rounded-t-lg">
+                        <h3 class="font-bold text-white">導出比賽記錄Excel</h3>
+                        <button class="text-white hover:text-gray-200 close-btn">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="p-4">
+                        <div class="preview-container mb-4">
+                            <table class="preview-table">
+                                <thead>
+                                    <tr>${Object.keys(data[0]).map(k => `<th>${k}</th>`).join('')}</tr>
+                                </thead>
+                                <tbody>
+                                    ${data.slice(0, 5).map(row => `
+                                        <tr>${Object.values(row).map(v => `<td>${v}</td>`).join('')}</tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="flex justify-end space-x-3">
+                            <button class="cancel-btn px-4 py-2 rounded bg-gray-200 hover:bg-gray-300">取消</button>
+                            <button class="export-confirm-btn px-4 py-2 rounded bg-blue-500 text-white hover:bg-blue-600">
+                                <i class="fas fa-download mr-2"></i>導出Excel
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                modalContent.querySelector('.close-btn').onclick = 
+                modalContent.querySelector('.cancel-btn').onclick = () => modal.remove();
+
+                modalContent.querySelector('.export-confirm-btn').onclick = () => {
+                    try {
+                        const ws = XLSX.utils.json_to_sheet(data);
+                        const wb = XLSX.utils.book_new();
+                        XLSX.utils.book_append_sheet(wb, ws, "比賽記錄");
+                        XLSX.writeFile(wb, `比賽記錄_${new Date().toISOString().slice(0,10)}.xlsx`);
+                        modal.remove();
+                    } catch (error) {
+                        alert('導出失敗: ' + error.message);
+                    }
+                };
+
+                modal.appendChild(modalContent);
+                document.body.appendChild(modal);
+            }
+            
+            // 技能賽記錄功能
+            function saveSkillRecord() {
+                console.log("嘗試保存技能賽記錄...");
+                
+                const date = skillDate.value;
+                const score = skillScore.value;
+                
+                if (!date || !score) {
+                    alert('請填寫完整的技能賽信息（日期、分數）');
+                    return;
+                }
+                
+                const skillRecord = {
+                    id: Date.now(),
+                    date: date,
+                    mode: selectedMode,
+                    score: parseInt(score),
+                    timestamp: new Date().toISOString()
+                };
+                
+                console.log("新技能賽記錄:", skillRecord);
+                
+                skillRecords.unshift(skillRecord);
+                saveSkillRecords();
+                renderSkillRecords();
+                
+                // 重置表單字段
+                skillScore.value = '';
+                
+                alert('技能賽記錄已保存！');
+            }
+            
+            function renderSkillRecords() {
+                if(!skillRecordsList) return;
+                
+                skillRecordsList.innerHTML = skillRecords.length ? '' : '<div class="text-center text-gray-500 py-4">尚無技能賽記錄</div>';
+                
+                skillRecords.forEach((record, index) => {
+                    const recordItem = document.createElement('div');
+                    recordItem.className = 'record-item';
+                    recordItem.innerHTML = `
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <div class="font-bold text-lg">${record.date}</div>
+                                <div class="text-sm text-opacity-80" style="color: var(--secondary-text)">
+                                    模式: ${record.mode === 'manual' ? '手動' : '自動'} | 分數: ${record.score}
+                                </div>
+                                <div class="text-sm mt-1 text-opacity-80" style="color: var(--secondary-text)">
+                                    記錄時間: ${new Date(record.timestamp).toLocaleTimeString('zh-Hant', {hour: '2-digit', minute: '2-digit', hour12: false})}
+                                </div>
+                            </div>
+                            <button class="delete-skill-btn" data-index="${index}">
+                                <svg class="h-5 w-5 text-red-500 hover:text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                                </svg>
+                            </button>
+                        </div>
+                    `;
+                    
+                    recordItem.querySelector('.delete-skill-btn').addEventListener('click', () => deleteSkillRecord(index));
+                    skillRecordsList.appendChild(recordItem);
+                });
+            }
+            
+            function deleteSkillRecord(index) {
+                skillRecords.splice(index, 1);
+                saveSkillRecords();
+                renderSkillRecords();
+            }
+            
+            function clearSkillRecords() {
+                if (confirm('確定要清除所有技能賽記錄嗎？此操作無法撤銷。')) {
+                    skillRecords = [];
+                    saveSkillRecords();
+                    renderSkillRecords();
+                }
+            }
+            
+            function saveSkillRecords() {
+                localStorage.setItem('skillRecords', JSON.stringify(skillRecords));
+            }
+            
+            function loadSkillRecords() {
+                const saved = localStorage.getItem('skillRecords');
+                if (saved) {
+                    skillRecords = JSON.parse(saved);
+                    renderSkillRecords();
+                }
+            }
+            
+            function exportSkillRecords() {
+                if (!skillRecords.length) {
+                    alert('沒有技能賽記錄可導出');
+                    return;
+                }
+                
+                const data = prepareSkillExcelData();
+                showSkillExportModal(data);
+            }
+            
+            function prepareSkillExcelData() {
+                return skillRecords.map(record => ({
+                    日期: record.date,
+                    模式: record.mode === 'manual' ? '手動' : '自動',
+                    分數: record.score
+                }));
+            }
+            
+            function showSkillExportModal(data) {
+                const modal = document.createElement('div');
+                modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50';
+
+                const modalContent = document.createElement('div');
+                modalContent.className = 'export-modal rounded-lg w-full max-w-lg bg-white dark:bg-gray-800';
+                
+                modalContent.innerHTML = `
+                    <div class="export-header px-4 py-3 flex justify-between items-center rounded-t-lg">
+                        <h3 class="font-bold text-white">導出技能賽記錄Excel</h3>
+                        <button class="text-white hover:text-gray-200 close-btn">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="p-4">
+                        <div class="preview-container mb-4">
+                            <table class="preview-table">
+                                <thead>
+                                    <tr>${Object.keys(data[0]).map(k => `<th>${k}</th>`).join('')}</tr>
+                                </thead>
+                                <tbody>
+                                    ${data.slice(0, 5).map(row => `
+                                        <tr>${Object.values(row).map(v => `<td>${v}</td>`).join('')}</tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="flex justify-end space-x-3">
+                            <button class="cancel-btn px-4 py-2 rounded bg-gray-200 hover:bg-gray-300">取消</button>
+                            <button class="export-confirm-btn px-4 py-2 rounded bg-blue-500 text-white hover:bg-blue-600">
+                                <i class="fas fa-download mr-2"></i>導出Excel
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                modalContent.querySelector('.close-btn').onclick = 
+                modalContent.querySelector('.cancel-btn').onclick = () => modal.remove();
+
+                modalContent.querySelector('.export-confirm-btn').onclick = () => {
+                    try {
+                        const ws = XLSX.utils.json_to_sheet(data);
+                        const wb = XLSX.utils.book_new();
+                        XLSX.utils.book_append_sheet(wb, ws, "技能賽記錄");
+                        XLSX.writeFile(wb, `技能賽記錄_${new Date().toISOString().slice(0,10)}.xlsx`);
+                        modal.remove();
+                    } catch (error) {
+                        alert('導出失敗: ' + error.message);
+                    }
+                };
+
+                modal.appendChild(modalContent);
+                document.body.appendChild(modal);
+            }
+
+            // Excel導出功能 - 時間記錄
+            function exportToExcel() {
+                if (!records.length) {
+                    alert('沒有記錄可導出');
+                    return;
+                }
+
+                const data = prepareExcelData();
+                showExportModal(data);
+            }
+
+            function prepareExcelData() {
+                return records.map(record => ({
+                    日期: new Date(record.startTime).toLocaleDateString('zh-Hant'),
+                    活動類型: record.type,
+                    開始時間: new Date(record.startTime).toLocaleTimeString('zh-Hant', {hour: '2-digit', minute: '2-digit', hour12: false}),
+                    結束時間: new Date(record.endTime).toLocaleTimeString('zh-Hant', {hour: '2-digit', minute: '2-digit', hour12: false}),
+                    持續時間: record.duration
+                }));
+            }
+
+            function showExportModal(data) {
+                const modal = document.createElement('div');
+                modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50';
+
+                const modalContent = document.createElement('div');
+                modalContent.className = 'export-modal rounded-lg w-full max-w-lg bg-white dark:bg-gray-800';
+                
+                modalContent.innerHTML = `
+                    <div class="export-header px-4 py-3 flex justify-between items-center rounded-t-lg">
+                        <h3 class="font-bold text-white">導出時間記錄Excel</h3>
+                        <button class="text-white hover:text-gray-200 close-btn">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="p-4">
+                        <div class="preview-container mb-4">
+                            <table class="preview-table">
+                                <thead>
+                                    <tr>${Object.keys(data[0]).map(k => `<th>${k}</th>`).join('')}</tr>
+                                </thead>
+                                <tbody>
+                                    ${data.slice(0, 5).map(row => `
+                                        <tr>${Object.values(row).map(v => `<td>${v}</td>`).join('')}</tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="flex justify-end space-x-3">
+                            <button class="cancel-btn px-4 py-2 rounded bg-gray-200 hover:bg-gray-300">取消</button>
+                            <button class="export-confirm-btn px-4 py-2 rounded bg-blue-500 text-white hover:bg-blue-600">
+                                <i class="fas fa-download mr-2"></i>導出Excel
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                modalContent.querySelector('.close-btn').onclick = 
+                modalContent.querySelector('.cancel-btn').onclick = () => modal.remove();
+
+                modalContent.querySelector('.export-confirm-btn').onclick = () => {
+                    try {
+                        const ws = XLSX.utils.json_to_sheet(data);
+                        const wb = XLSX.utils.book_new();
+                        XLSX.utils.book_append_sheet(wb, ws, "時間記錄");
+                        XLSX.writeFile(wb, `時間記錄_${new Date().toISOString().slice(0,10)}.xlsx`);
+                        modal.remove();
+                    } catch (error) {
+                        alert('導出失敗: ' + error.message);
+                    }
+                };
+
+                modal.appendChild(modalContent);
+                document.body.appendChild(modal);
+            }
+
+            // 啟動系統
+            init();
+        });
+    </script>
+</body>
+</html>
+
