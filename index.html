@@ -360,9 +360,16 @@
             <div class="card p-5 mb-4">
                 <h2 class="text-lg font-bold mb-3">添加比賽記錄</h2>
                 
-                <div class="form-group">
-                    <label for="matchDate" class="form-label">比賽日期</label>
-                    <input type="date" id="matchDate" class="form-input">
+                <!-- 將日期和場數/回合放在同一行 -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="form-group">
+                        <label for="matchDate" class="form-label">比賽日期</label>
+                        <input type="date" id="matchDate" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label for="matchCount" class="form-label">場數/回合</label>
+                        <input type="text" id="matchCount" class="form-input" placeholder="如: 3, R1, A2">
+                    </div>
                 </div>
                 
                 <div class="form-divider"></div>
@@ -384,6 +391,16 @@
                     <input type="number" id="myTeamScore" class="form-input" min="0" placeholder="輸入己方分數">
                 </div>
                 
+                <div class="form-group">
+                    <label class="form-label flex items-center justify-between">
+                        己方自動模式獲勝
+                        <label class="switch">
+                            <input type="checkbox" id="myTeamAutoWin">
+                            <span class="slider"></span>
+                        </label>
+                    </label>
+                </div>
+                
                 <div class="form-divider"></div>
                 
                 <div class="form-section-title">對方信息</div>
@@ -403,18 +420,11 @@
                     <input type="number" id="opponentScore" class="form-input" min="0" placeholder="輸入對方分數">
                 </div>
                 
-                <div class="form-divider"></div>
-                
-                <div class="form-group">
-                    <label for="matchCount" class="form-label">場數/回合</label>
-                    <input type="text" id="matchCount" class="form-input" placeholder="輸入場數或回合 (如: 3, R1, A2)">
-                </div>
-                
                 <div class="form-group">
                     <label class="form-label flex items-center justify-between">
-                        自動模式獲勝
+                        敵方自動模式獲勝
                         <label class="switch">
-                            <input type="checkbox" id="autoWin">
+                            <input type="checkbox" id="opponentAutoWin">
                             <span class="slider"></span>
                         </label>
                     </label>
@@ -447,8 +457,18 @@
             <div class="card p-5 mb-4">
                 <h2 class="text-lg font-bold mb-3">添加技能賽記錄</h2>
                 
+                <!-- 將日期和練習開關放在同一行 -->
                 <div class="form-group">
-                    <label for="skillDate" class="form-label">比賽日期</label>
+                    <div class="flex items-center justify-between">
+                        <label for="skillDate" class="form-label">比賽日期</label>
+                        <label class="flex items-center">
+                            <span class="mr-2 text-sm font-medium">練習</span>
+                            <label class="switch">
+                                <input type="checkbox" id="isPractice">
+                                <span class="slider"></span>
+                            </label>
+                        </label>
+                    </div>
                     <input type="date" id="skillDate" class="form-input">
                 </div>
                 
@@ -506,6 +526,11 @@
             let currentTheme = 'light';
             let currentTab = 'timeTracking';
             let selectedMode = 'manual';
+            
+            // 保存用戶偏好設置
+            let userPreferences = {
+                isPractice: false
+            };
 
             // DOM元素 - 時間記錄相關
             const timeDisplay = document.getElementById('currentTimeDisplay');
@@ -527,7 +552,8 @@
             const opponentTeam2 = document.getElementById('opponentTeam2');
             const opponentScore = document.getElementById('opponentScore');
             const matchCount = document.getElementById('matchCount');
-            const autoWin = document.getElementById('autoWin');
+            const myTeamAutoWin = document.getElementById('myTeamAutoWin');
+            const opponentAutoWin = document.getElementById('opponentAutoWin');
             const saveMatchBtn = document.getElementById('saveMatchBtn');
             const clearMatchBtn = document.getElementById('clearMatchBtn');
             const exportMatchBtn = document.getElementById('exportMatchBtn');
@@ -537,6 +563,7 @@
             const skillDate = document.getElementById('skillDate');
             const radioButtons = document.querySelectorAll('.radio-btn');
             const skillScore = document.getElementById('skillScore');
+            const isPractice = document.getElementById('isPractice');  // 練習開關
             const saveSkillBtn = document.getElementById('saveSkillBtn');
             const clearSkillBtn = document.getElementById('clearSkillBtn');
             const exportSkillBtn = document.getElementById('exportSkillBtn');
@@ -556,6 +583,9 @@
                 
                 // 加載主題偏好
                 loadThemePreference();
+                
+                // 加載用戶偏好設置
+                loadUserPreferences();
                 
                 // 設置今天日期
                 const today = new Date().toISOString().split('T')[0];
@@ -597,11 +627,42 @@
                     });
                 });
                 
+                // 練習模式偏好保存
+                if(isPractice) {
+                    isPractice.addEventListener('change', function() {
+                        userPreferences.isPractice = this.checked;
+                        saveUserPreferences();
+                    });
+                }
+                
                 if(saveSkillBtn) saveSkillBtn.addEventListener('click', saveSkillRecord);
                 if(clearSkillBtn) clearSkillBtn.addEventListener('click', clearSkillRecords);
                 if(exportSkillBtn) exportSkillBtn.addEventListener('click', exportSkillRecords);
                 
                 console.log("初始化完成！");
+            }
+            
+            // 加載用戶偏好設置
+            function loadUserPreferences() {
+                const saved = localStorage.getItem('userPreferences');
+                if (saved) {
+                    try {
+                        const prefs = JSON.parse(saved);
+                        userPreferences = {...userPreferences, ...prefs};
+                        
+                        // 應用保存的練習模式設置
+                        if(isPractice && userPreferences.isPractice !== undefined) {
+                            isPractice.checked = userPreferences.isPractice;
+                        }
+                    } catch (e) {
+                        console.error("加載用戶偏好設置出錯:", e);
+                    }
+                }
+            }
+            
+            // 保存用戶偏好設置
+            function saveUserPreferences() {
+                localStorage.setItem('userPreferences', JSON.stringify(userPreferences));
             }
 
             function renderActivityButtons() {
@@ -797,7 +858,8 @@
                 const opponent2 = opponentTeam2.value.trim();
                 const oppScore = opponentScore.value;
                 const count = matchCount.value.trim();
-                const win = autoWin.checked;
+                const myTeamWin = myTeamAutoWin.checked;
+                const oppTeamWin = opponentAutoWin.checked;
                 
                 if (!date || !teamNumber || !myScore || !opponent1 || !oppScore || !count) {
                     alert('請填寫必要的比賽信息（日期、己方隊伍、己方分數、對方隊伍1、對方分數、場數/回合）');
@@ -814,7 +876,8 @@
                     opponent2: opponent2 || "未指定",
                     opponentScore: parseInt(oppScore),
                     count: count,
-                    autoWin: win,
+                    myTeamAutoWin: myTeamWin,
+                    opponentAutoWin: oppTeamWin,
                     timestamp: new Date().toISOString()
                 };
                 
@@ -828,7 +891,8 @@
                 myTeamScore.value = '';
                 opponentScore.value = '';
                 matchCount.value = '';
-                autoWin.checked = false;
+                myTeamAutoWin.checked = false;
+                opponentAutoWin.checked = false;
                 
                 alert('比賽記錄已保存！');
             }
@@ -839,20 +903,42 @@
                 matchRecordsList.innerHTML = matchRecords.length ? '' : '<div class="text-center text-gray-500 py-4">尚無比賽記錄</div>';
                 
                 matchRecords.forEach((record, index) => {
+                    // 處理向後兼容：檢查新舊格式的自動模式字段
+                    const myAutoWinText = record.myTeamAutoWin ? '己方自動獲勝' : '';
+                    const oppAutoWinText = record.opponentAutoWin ? '敵方自動獲勝' : '';
+                    
+                    // 舊記錄格式的處理
+                    let autoWinText = '';
+                    if (record.autoWin !== undefined) {
+                        autoWinText = record.autoWin ? '自動模式獲勝' : '';
+                    }
+                    
+                    // 組合自動模式狀態文本
+                    let autoModeInfo = '';
+                    if (myAutoWinText && oppAutoWinText) {
+                        autoModeInfo = `${myAutoWinText}, ${oppAutoWinText}`;
+                    } else if (myAutoWinText) {
+                        autoModeInfo = myAutoWinText;
+                    } else if (oppAutoWinText) {
+                        autoModeInfo = oppAutoWinText;
+                    } else if (autoWinText) {
+                        autoModeInfo = autoWinText;
+                    }
+                    
                     const recordItem = document.createElement('div');
                     recordItem.className = 'record-item';
                     recordItem.innerHTML = `
                         <div class="flex justify-between items-center">
                             <div>
-                                <div class="font-bold text-lg">${record.date}</div>
+                                <div class="font-bold text-lg">${record.date} - 場數/回合: ${record.count}</div>
                                 <div class="text-sm text-opacity-80" style="color: var(--secondary-text)">
                                     己方：${record.myTeam} | 對方：${record.opponent1}${record.opponent2 !== "未指定" ? '、' + record.opponent2 : ''}
                                 </div>
                                 <div class="text-sm text-opacity-80" style="color: var(--secondary-text)">
-                                    場數/回合: ${record.count} | 比分: ${record.myScore} : ${record.opponentScore}
+                                    比分: ${record.myScore} : ${record.opponentScore}
                                 </div>
                                 <div class="text-sm mt-1 text-opacity-80" style="color: var(--secondary-text)">
-                                    隊友: ${record.teammate} | 自動模式: ${record.autoWin ? '獲勝' : '未獲勝'}
+                                    隊友: ${record.teammate}${autoModeInfo ? ' | ' + autoModeInfo : ''}
                                 </div>
                             </div>
                             <button class="delete-match-btn" data-index="${index}">
@@ -890,6 +976,15 @@
                 const saved = localStorage.getItem('matchRecords');
                 if (saved) {
                     matchRecords = JSON.parse(saved);
+                    
+                    // 處理舊版本的數據 - 將autoWin轉換為新格式
+                    matchRecords.forEach(record => {
+                        if (record.myTeamAutoWin === undefined && record.opponentAutoWin === undefined && record.autoWin !== undefined) {
+                            record.myTeamAutoWin = record.autoWin;
+                            record.opponentAutoWin = false;
+                        }
+                    });
+                    
                     renderMatchRecords();
                 }
             }
@@ -905,17 +1000,24 @@
             }
             
             function prepareMatchExcelData() {
-                return matchRecords.map(record => ({
-                    日期: record.date,
-                    己方隊伍: record.myTeam,
-                    隊友: record.teammate,
-                    己方分數: record.myScore,
-                    對方隊伍1: record.opponent1,
-                    對方隊伍2: record.opponent2,
-                    對方分數: record.opponentScore,
-                    場數回合: record.count,
-                    自動模式獲勝: record.autoWin ? '是' : '否'
-                }));
+                return matchRecords.map(record => {
+                    // 處理向後兼容
+                    const myTeamAuto = record.myTeamAutoWin !== undefined ? record.myTeamAutoWin : (record.autoWin || false);
+                    const oppTeamAuto = record.opponentAutoWin !== undefined ? record.opponentAutoWin : false;
+                    
+                    return {
+                        日期: record.date,
+                        場數回合: record.count,
+                        己方隊伍: record.myTeam,
+                        隊友: record.teammate,
+                        己方分數: record.myScore,
+                        對方隊伍1: record.opponent1,
+                        對方隊伍2: record.opponent2,
+                        對方分數: record.opponentScore,
+                        己方自動模式獲勝: myTeamAuto ? '是' : '否',
+                        敵方自動模式獲勝: oppTeamAuto ? '是' : '否'
+                    };
+                });
             }
             
             function showMatchExportModal(data) {
@@ -981,6 +1083,7 @@
                 
                 const date = skillDate.value;
                 const score = skillScore.value;
+                const practice = isPractice.checked;  // 獲取練習狀態
                 
                 if (!date || !score) {
                     alert('請填寫完整的技能賽信息（日期、分數）');
@@ -992,6 +1095,7 @@
                     date: date,
                     mode: selectedMode,
                     score: parseInt(score),
+                    isPractice: practice,  // 保存練習狀態
                     timestamp: new Date().toISOString()
                 };
                 
@@ -1001,8 +1105,9 @@
                 saveSkillRecords();
                 renderSkillRecords();
                 
-                // 重置表單字段
+                // 重置分數字段
                 skillScore.value = '';
+                // 練習狀態保持不變
                 
                 alert('技能賽記錄已保存！');
             }
@@ -1018,7 +1123,7 @@
                     recordItem.innerHTML = `
                         <div class="flex justify-between items-center">
                             <div>
-                                <div class="font-bold text-lg">${record.date}</div>
+                                <div class="font-bold text-lg">${record.date} ${record.isPractice ? '(練習)' : ''}</div>
                                 <div class="text-sm text-opacity-80" style="color: var(--secondary-text)">
                                     模式: ${record.mode === 'manual' ? '手動' : '自動'} | 分數: ${record.score}
                                 </div>
@@ -1061,6 +1166,14 @@
                 const saved = localStorage.getItem('skillRecords');
                 if (saved) {
                     skillRecords = JSON.parse(saved);
+                    
+                    // 兼容舊數據，如果沒有isPractice字段則添加
+                    skillRecords.forEach(record => {
+                        if (record.isPractice === undefined) {
+                            record.isPractice = false;
+                        }
+                    });
+                    
                     renderSkillRecords();
                 }
             }
@@ -1079,7 +1192,8 @@
                 return skillRecords.map(record => ({
                     日期: record.date,
                     模式: record.mode === 'manual' ? '手動' : '自動',
-                    分數: record.score
+                    分數: record.score,
+                    練習: record.isPractice ? '是' : '否'  // 添加練習欄位到Excel
                 }));
             }
             
@@ -1224,4 +1338,3 @@
     </script>
 </body>
 </html>
-
